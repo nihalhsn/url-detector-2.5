@@ -922,12 +922,22 @@ class RiskScoringEngine:
 
         normalized_score = min(100, int((score / max(max_possible, 1)) * 100))
 
+        # Trusted domain with low score = very high confidence safe
+        if self.parser.is_trusted and normalized_score < 20:
+            confidence = 0.98
+        else:
+            confidence = self._calculate_confidence(
+                factors, 
+                float(self.ml.get('confidence', 0.5)), 
+                normalized_score
+            )
+
         return {
             'raw_score': round(score, 2),
             'max_possible': max_possible,
             'normalized_score': normalized_score,
             'risk_level': self._get_risk_level(normalized_score),
-            'confidence': self._calculate_confidence(factors),
+            'confidence': confidence,
             'factors': sorted(factors, key=lambda x: x['weight'], reverse=True),
             'primary_threats': [f for f in factors if f['severity'] in ['CRITICAL', 'HIGH']][:3]
         }
@@ -942,18 +952,44 @@ class RiskScoringEngine:
         else:
             return 'MINIMAL'
 
-    def _calculate_confidence(self, factors):
+    def _calculate_confidence(self, factors, ml_confidence=0.5, risk_score=0):
+        # No factors + safe score = high confidence it's safe
+        if not factors and risk_score < 15:
+            return 0.95  # 95% confident it's safe
+            
+        # No factors but elevated score = use ML confidence
         if not factors:
-            return 0.5
+            return max(0.5, ml_confidence)
 
-        layers = len(set(f['layer'] for f in factors))
-        layer_bonus = min(0.2, layers * 0.05)
-
+        # Count evidence by severity
         critical_count = sum(1 for f in factors if f['severity'] == 'CRITICAL')
-        critical_bonus = min(0.3, critical_count * 0.15)
-
-        base_confidence = 0.5 + layer_bonus + critical_bonus
-        return min(0.99, base_confidence)
+        high_count = sum(1 for f in factors if f['severity'] == 'HIGH')
+        medium_count = sum(1 for f in factors if f['severity'] == 'MEDIUM')
+        
+        total_weighted = critical_count * 3 + high_count * 2 + medium_count * 1
+        
+        # Base confidence from evidence strength
+        if critical_count > 0:
+            base = 0.75
+        elif high_count > 0:
+            base = 0.65
+        elif medium_count > 0:
+            base = 0.55
+        else:
+            base = 0.50
+            
+        # Boost for multiple independent findings
+        evidence_bonus = min(0.25, total_weighted * 0.05)
+        
+        # ML agreement bonus
+        ml_agreement = 0
+        if ml_confidence > 0.7 and risk_score > 40:
+            ml_agreement = 0.10
+        elif ml_confidence < 0.3 and risk_score < 20:
+            ml_agreement = 0.10
+            
+        confidence = base + evidence_bonus + ml_agreement
+        return min(0.99, confidence)
 
 # ============ HYBRID RISK SCORING ENGINE ============
 class HybridRiskScoringEngine:
@@ -1728,7 +1764,7 @@ class PhishingMLModel:
         X = np.random.rand(100, len(self.feature_names))
         y = np.random.randint(0, 2, 100)
         self.model.fit(X, y)
-        self.model_info = {'training_date': 'Dummy', 'samples': 100, 'accuracy': 0.5, 'version': 0}
+        self.model_info = {'training_date': 'Dummy', 'samples': 100, 'accuracy': 0.5, 'version': 0, 'is_dummy': True}
 
     def extract_features(self, url):
         features = {}
@@ -1793,10 +1829,11 @@ class PhishingMLModel:
             X = pd.DataFrame([features], columns=self.feature_names)
             prediction = self.model.predict(X)[0]
             probability = self.model.predict_proba(X)[0]
+            is_dummy = getattr(self, 'model_info', {}).get('is_dummy', False)
             return {
                 'is_phishing': bool(prediction),
-                'confidence': float(max(probability)),
-                'phishing_probability': float(probability[1]) if len(probability) > 1 else 0.0,
+                'confidence': 0.3 if is_dummy else float(max(probability)),  # Low confidence for dummy
+                'phishing_probability': 0.5 if is_dummy else float(probability[1]) if len(probability) > 1 else 0.0,
                 'features': dict(zip(self.feature_names, features))
             }
         except Exception as e:
