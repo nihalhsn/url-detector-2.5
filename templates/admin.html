@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard Pro - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a237e;
+            --secondary: #3949ab;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+            --dark: #1e1e2d;
+            --light: #f5f6fa;
+        }
+        
+        body {
+            background: var(--light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            min-height: 100vh;
+            background: var(--dark);
+            color: white;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-brand {
+            padding: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar-brand i {
+            color: var(--danger);
+            margin-right: 10px;
+        }
+        
+        .nav-link {
+            color: rgba(255,255,255,0.7);
+            padding: 15px 20px;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.05);
+            border-left-color: var(--danger);
+        }
+        
+        .nav-link i {
+            width: 25px;
+            margin-right: 10px;
+        }
+        
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+            height: 100%;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .card-header-custom {
+            background: white;
+            border-bottom: 2px solid var(--light);
+            padding: 20px;
+            font-weight: 600;
+        }
+        
+        .table-custom th {
+            background: var(--light);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge-risk {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .badge-safe { background: #d4edda; color: #155724; }
+        .badge-suspicious { background: #fff3cd; color: #856404; }
+        .badge-malicious { background: #f8d7da; color: #721c24; }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            height: 100%;
+        }
+        
+        .correction-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        
+        .correction-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        
+        .correction-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .correction-item:last-child {
+            border-bottom: none;
+        }
+        
+        .btn-correction {
+            padding: 5px 15px;
+            font-size: 0.8rem;
+            border-radius: 20px;
+        }
+        
+        .progress-thin {
+            height: 6px;
+            border-radius: 3px;
+        }
+        
+        .topbar {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .model-info-badge {
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <i class="fas fa-shield-alt"></i> PhishGuard Pro
+    </div>
+    <nav class="mt-3">
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-link active">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+        <a href="{{ url_for('model_training_page') }}" class="nav-link">
+            <i class="fas fa-brain"></i> Model Training
+        </a>
+        <a href="{{ url_for('index') }}" class="nav-link">
+            <i class="fas fa-search"></i> URL Scanner
+        </a>
+        <a href="{{ url_for('admin_logout') }}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+    </nav>
+    
+    <div class="mt-auto p-3" style="position: absolute; bottom: 0; width: 100%;">
+        <div class="model-info-badge">
+            <i class="fas fa-code-branch"></i> 
+            Model v{{ model_info.get('version', 'N/A') }}
+        </div>
+        <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+            Acc: {{ "%.1f"|format(model_info.get('accuracy', 0) * 100) }}% | 
+            {{ model_info.get('samples', 0) }} samples
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div>
+            <h4 class="mb-0">Dashboard</h4>
+            <small class="text-muted">Real-time threat monitoring & analytics</small>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" onclick="refreshData()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button class="btn btn-outline-danger btn-sm" onclick="clearHistory()">
+                <i class="fas fa-trash"></i> Clear History
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="stat-value text-primary">{{ stats.total }}</div>
+                <div class="stat-label">Total Scans</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success bg-opacity-10 text-success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-value text-success">{{ stats.safe }}</div>
+                <div class="stat-label">Safe ({{ stats.safe_pct }}%)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-value text-warning">{{ stats.suspicious }}</div>
+                <div class="stat-label">Suspicious ({{ stats.suspicious_pct }}%)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                    <i class="fas fa-skull-crossbones"></i>
+                </div>
+                <div class="stat-value text-danger">{{ stats.malicious }}</div>
+                <div class="stat-label">Malicious ({{ stats.malicious_pct }}%)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h6 class="mb-3"><i class="fas fa-chart-pie"></i> Risk Distribution</h6>
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="chart-container">
+                <h6 class="mb-3"><i class="fas fa-chart-line"></i> Daily Scan Activity (Last 30 Days)</h6>
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Corrections Panel -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="correction-panel">
+                <div class="card-header-custom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0"><i class="fas fa-edit"></i> Feedback Corrections</h5>
+                        <small class="text-muted">Review and manage user feedback for model improvement</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success btn-sm" onclick="retrainWithCorrections()" id="retrainBtn">
+                            <i class="fas fa-redo"></i> Retrain Model
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="clearCorrections()">
+                            <i class="fas fa-trash"></i> Clear All
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom mb-0">
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Predicted</th>
+                                <th>Corrected</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="correctionsTable">
+                            {% for corr in corrections %}
+                            <tr>
+                                <td class="text-truncate" style="max-width: 300px;" title="{{ corr.url }}">
+                                    {{ corr.url }}
+                                </td>
+                                <td>
+                                    {% if corr.predicted_label == 1 %}
+                                    <span class="badge badge-malicious">Phishing</span>
+                                    {% else %}
+                                    <span class="badge badge-safe">Safe</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if corr.corrected_label == 1 %}
+                                    <span class="badge badge-malicious">Phishing</span>
+                                    {% else %}
+                                    <span class="badge badge-safe">Safe</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if corr.processed %}
+                                    <span class="badge bg-secondary">Processed</span>
+                                    {% else %}
+                                    <span class="badge bg-info">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ corr.timestamp }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCorrection({{ corr.id }})">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                    No corrections recorded yet
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Scans -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header-custom">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Scans</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0">
+                            <thead>
+                                <tr>
+                                    <th>URL</th>
+                                    <th>Risk Level</th>
+                                    <th>Score</th>
+                                    <th>Confidence</th>
+                                    <th>Verdict</th>
+                                    <th>Time</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for scan in recent_scans %}
+                                <tr>
+                                    <td class="text-truncate" style="max-width: 300px;" title="{{ scan.url }}">
+                                        {{ scan.url }}
+                                    </td>
+                                    <td>
+                                        {% if scan.result in ['LOW', 'MINIMAL', 'Safe'] %}
+                                        <span class="badge badge-safe">SAFE</span>
+                                        {% elif scan.result == 'MEDIUM' %}
+                                        <span class="badge badge-suspicious">SUSPICIOUS</span>
+                                        {% else %}
+                                        <span class="badge badge-malicious">MALICIOUS</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 progress-thin me-2">
+                                                <div class="progress-bar bg-{{ 'danger' if scan.score >= 70 else 'warning' if scan.score >= 40 else 'success' }}" 
+                                                     style="width: {{ scan.score }}%"></div>
+                                            </div>
+                                            <small>{{ "%.0f"|format(scan.score) }}</small>
+                                        </div>
+                                    </td>
+                                    <td>{{ "%.0f"|format(scan.confidence * 100) }}%</td>
+                                    <td class="text-truncate" style="max-width: 250px;">{{ scan.verdict }}</td>
+                                    <td>{{ scan.timestamp }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-success" onclick="markCorrection('{{ scan.url }}', 0)" title="Mark as Safe">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" onclick="markCorrection('{{ scan.url }}', 1)" title="Mark as Phishing">
+                                                <i class="fas fa-skull"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                        No scans recorded yet
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Model Versions -->
+    {% if model_versions %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header-custom">
+                    <h5 class="mb-0"><i class="fas fa-code-branch"></i> Model Versions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Version</th>
+                                    <th>Accuracy</th>
+                                    <th>Dataset Size</th>
+                                    <th>Training Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for version in model_versions %}
+                                <tr>
+                                    <td>v{{ version.version }}</td>
+                                    <td>{{ "%.2f"|format(version.accuracy * 100) }}%</td>
+                                    <td>{{ version.dataset_size }}</td>
+                                    <td>{{ version.training_date }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="switchModel({{ version.version }})">
+                                            <i class="fas fa-exchange-alt"></i> Switch
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Chart Data from Backend
+const chartData = {{ chart_data | tojson }};
+
+// Pie Chart - Risk Distribution
+const pieCtx = document.getElementById('pieChart').getContext('2d');
+new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+        labels: chartData.pie.labels,
+        datasets: [{
+            data: chartData.pie.data,
+            backgroundColor: chartData.pie.colors,
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: { padding: 15, font: { size: 12 } }
+            }
+        },
+        cutout: '60%'
+    }
+});
+
+// Line Chart - Daily Activity
+const lineCtx = document.getElementById('lineChart').getContext('2d');
+new Chart(lineCtx, {
+    type: 'line',
+    data: {
+        labels: chartData.line.labels,
+        datasets: chartData.line.datasets
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: { usePointStyle: true, padding: 15 }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    }
+});
+
+// Refresh Data
+function refreshData() {
+    location.reload();
+}
+
+// Clear History
+function clearHistory() {
+    if (!confirm('Are you sure you want to clear all scan history?')) return;
+    
+    fetch('/admin/api/clear-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+// Mark Correction
+function markCorrection(url, correctedLabel) {
+    const labelText = correctedLabel === 0 ? 'Safe' : 'Phishing';
+    if (!confirm(`Mark this URL as ${labelText}?`)) return;
+    
+    fetch('/admin/api/correction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url, corrected_label: correctedLabel })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+// Retrain with Corrections
+function retrainWithCorrections() {
+    if (!confirm('Retrain model with all pending corrections? This may take a few minutes.')) return;
+    
+    const btn = document.getElementById('retrainBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Retraining...';
+    
+    fetch('/admin/api/retrain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Retraining started! Check Model Training page for progress.');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-redo"></i> Retrain Model';
+        }
+    });
+}
+
+// Clear Corrections
+function clearCorrections() {
+    if (!confirm('Clear all corrections?')) return;
+    
+    fetch('/admin/api/corrections/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+
+// Delete Single Correction
+function deleteCorrection(id) {
+    if (!confirm('Delete this correction?')) return;
+    // Implement if needed - currently reloads to show updated state
+    location.reload();
+}
+
+// Switch Model Version
+function switchModel(version) {
+    if (!confirm(`Switch to model version ${version}?`)) return;
+    
+    fetch(`/admin/api/model/switch/${version}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Model switched successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+}
+</script>
+
+</body>
+</html>

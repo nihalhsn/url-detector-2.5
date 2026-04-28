@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard Pro — URL Scanner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a1f2e;
+            --bg-card-hover: #22283a;
+            --border-color: #2a3142;
+            --text-primary: #f0f4f8;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+            --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+            --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+            --gradient-success: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+            --shadow-glow-blue: 0 0 40px rgba(59, 130, 246, 0.15);
+            --shadow-glow-red: 0 0 40px rgba(239, 68, 68, 0.15);
+            --shadow-glow-green: 0 0 40px rgba(16, 185, 129, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.03;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.5) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow-1 {
+            top: -200px;
+            right: -200px;
+            background: var(--accent-blue);
+        }
+
+        .bg-glow-2 {
+            bottom: -300px;
+            left: -200px;
+            background: var(--accent-cyan);
+        }
+
+        /* Navbar */
+        .navbar-custom {
+            background: rgba(10, 14, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: var(--text-primary) !important;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .navbar-brand .shield-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .navbar-brand .shield-icon i {
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .nav-link-custom {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            padding: 8px 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link-custom:hover {
+            color: var(--text-primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Main Container */
+        .main-container {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #f0f4f8 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Scanner Card */
+        .scanner-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scanner-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+            opacity: 0.5;
+        }
+
+        .scan-input-group {
+            position: relative;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .scan-input {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px 24px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .scan-input::placeholder {
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .scan-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-scan {
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 16px;
+            padding: 18px 36px;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-scan:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading State */
+        .scan-loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .scan-loading.active {
+            display: block;
+        }
+
+        .scanner-ring {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .scanner-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-blue);
+            border-right-color: var(--accent-cyan);
+            animation: spin 1s linear infinite;
+        }
+
+        .scanner-ring::after {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-bottom-color: var(--accent-purple);
+            border-left-color: var(--accent-cyan);
+            animation: spin 1.5s linear infinite reverse;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .scan-loading p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .scan-loading .scan-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Results Card */
+        .results-card {
+            display: none;
+            margin-top: 30px;
+            animation: slideUp 0.6s ease;
+        }
+
+        .results-card.active {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Verdict Header */
+        .verdict-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .verdict-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .verdict-safe {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--accent-green);
+        }
+
+        .verdict-suspicious {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--accent-yellow);
+        }
+
+        .verdict-malicious {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--accent-red);
+        }
+
+        /* Score Circle */
+        .score-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-circle-bg {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: conic-gradient(var(--score-color) var(--score-deg), var(--bg-secondary) var(--score-deg));
+            padding: 8px;
+        }
+
+        .score-circle-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--bg-card);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-value {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+            color: var(--score-color);
+        }
+
+        .score-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Hybrid Scores */
+        .hybrid-section {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hybrid-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .hybrid-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .hybrid-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .hybrid-icon.ml { background: rgba(59, 130, 246, 0.15); color: var(--accent-blue); }
+        .hybrid-icon.rules { background: rgba(245, 158, 11, 0.15); color: var(--accent-yellow); }
+        .hybrid-icon.api { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
+
+        .hybrid-info {
+            flex: 1;
+        }
+
+        .hybrid-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .hybrid-bar-bg {
+            height: 6px;
+            background: var(--bg-card);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .hybrid-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease;
+        }
+
+        .hybrid-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            width: 50px;
+            text-align: right;
+        }
+
+        /* Info Cards Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .info-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .info-card:hover {
+            border-color: var(--accent-blue);
+            background: var(--bg-card-hover);
+        }
+
+        .info-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .info-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .info-card-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        /* Factor List */
+        .factor-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .factor-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .factor-item:last-child {
+            border-bottom: none;
+        }
+
+        .factor-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 6px;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .factor-content {
+            flex: 1;
+        }
+
+        .factor-layer {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .factor-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Domain Info */
+        .domain-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .domain-row:last-child {
+            border-bottom: none;
+        }
+
+        .domain-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .domain-value {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            word-break: break-all;
+            max-width: 60%;
+            text-align: right;
+        }
+
+        /* Recommendations */
+        .rec-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+        }
+
+        .rec-icon {
+            color: var(--accent-blue);
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .rec-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.2rem;
+            }
+
+            .scan-input-group {
+                flex-direction: column;
+            }
+
+            .btn-scan {
+                justify-content: center;
+            }
+
+            .scanner-card {
+                padding: 24px;
+            }
+
+            .score-circle {
+                width: 140px;
+                height: 140px;
+            }
+
+            .score-value {
+                font-size: 2.2rem;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- Navbar -->
+<nav class="navbar-custom">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <div class="shield-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <span>PhishGuard<span style="color: var(--accent-blue);">Pro</span></span>
+            </a>
+            <a href="{{ url_for('admin_login') }}" class="nav-link-custom">
+                <i class="fas fa-lock"></i>
+                <span class="d-none d-sm-inline">Admin Panel</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="main-container">
+
+    <!-- Hero -->
+    <div class="hero-section">
+        <div class="hero-badge">
+            <i class="fas fa-bolt"></i>
+            Real-time Threat Detection
+        </div>
+        <h1 class="hero-title">Detect Phishing<br>Before It Strikes</h1>
+        <p class="hero-subtitle">Multi-layer AI analysis combining machine learning, rule-based detection, and threat intelligence APIs.</p>
+    </div>
+
+    <!-- Scanner -->
+    <div class="scanner-card">
+        <div class="scan-input-group">
+            <input type="url" class="scan-input" id="urlInput" 
+                   placeholder="https://suspicious-site.com/login" 
+                   autocomplete="off">
+            <button class="btn-scan" id="scanBtn" onclick="scanUrl()">
+                <i class="fas fa-radar"></i>
+                <span>Scan URL</span>
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="scan-loading" id="loadingSpinner">
+            <div class="scanner-ring"></div>
+            <p>Analyzing URL<span class="scan-dots"></span></p>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Running ML model, rule checks, and API lookups</p>
+        </div>
+
+        <!-- Results -->
+        <div class="results-card" id="resultCard">
+
+            <!-- Verdict -->
+            <div class="verdict-header">
+                <div class="verdict-badge" id="verdictBadge">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="verdictText">Safe</span>
+                </div>
+            </div>
+
+            <!-- Score -->
+            <div class="score-container">
+                <div class="score-circle" id="scoreCircle">
+                    <div class="score-circle-bg" id="scoreCircleBg">
+                        <div class="score-circle-inner">
+                            <div class="score-value" id="scoreValue">0%</div>
+                            <div class="score-label">Risk Score</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hybrid Scores -->
+            <div class="hybrid-section">
+                <div class="section-title">
+                    <i class="fas fa-layer-group"></i>
+                    Hybrid Analysis
+                </div>
+                <div class="hybrid-item">
+                    <div class="hybrid-icon ml">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="hybrid-info">
+                        <div class="hybrid-name">Machine Learning</div>
+                        <div class="hybrid-bar-bg">
+                            <div class="hybrid-bar-fill" id="mlBar" style="width: 0%; background: var(--accent-blue);"></div>
+                        </div>
+                    </div>
+                    <div class="hybrid-value" id="mlValue" style="color: var(--accent-blue);">0%</div>
+                </div>
+                <div class="hybrid-item">
+                    <div class="hybrid-icon rules">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="hybrid-info">
+                        <div class="hybrid-name">Rule Engine</div>
+                        <div class="hybrid-bar-bg">
+                            <div class="hybrid-bar-fill" id="ruleBar" style="width: 0%; background: var(--accent-yellow);"></div>
+                        </div>
+                    </div>
+                    <div class="hybrid-value" id="ruleValue" style="color: var(--accent-yellow);">0%</div>
+                </div>
+                <div class="hybrid-item">
+                    <div class="hybrid-icon api">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="hybrid-info">
+                        <div class="hybrid-name">Threat Intel APIs</div>
+                        <div class="hybrid-bar-bg">
+                            <div class="hybrid-bar-fill" id="apiBar" style="width: 0%; background: var(--accent-cyan);"></div>
+                        </div>
+                    </div>
+                    <div class="hybrid-value" id="apiValue" style="color: var(--accent-cyan);">0%</div>
+                </div>
+            </div>
+
+            <!-- Info Grid -->
+            <div class="info-grid">
+
+                <!-- Threats -->
+                <div class="info-card" id="threatsCard">
+                    <div class="info-card-header">
+                        <div class="info-card-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--accent-red);">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <span class="info-card-title">Primary Threats</span>
+                    </div>
+                    <ul class="factor-list" id="threatsList"></ul>
+                </div>
+
+                <!-- Domain Info -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <div class="info-card-icon" style="background: rgba(139, 92, 246, 0.15); color: var(--accent-purple);">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <span class="info-card-title">Domain Analysis</span>
+                    </div>
+                    <div id="domainInfo"></div>
+                </div>
+
+                <!-- All Factors -->
+                <div class="info-card" id="factorsCard" style="grid-column: 1 / -1;">
+                    <div class="info-card-header">
+                        <div class="info-card-icon" style="background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);">
+                            <i class="fas fa-list-ul"></i>
+                        </div>
+                        <span class="info-card-title">Detection Factors</span>
+                    </div>
+                    <ul class="factor-list" id="factorsList"></ul>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="info-card" style="grid-column: 1 / -1;">
+                    <div class="info-card-header">
+                        <div class="info-card-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-green);">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <span class="info-card-title">Recommendations</span>
+                    </div>
+                    <div id="recommendationsList"></div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Powered by <strong>PhishGuard Pro</strong> — Multi-Layer Phishing Detection</p>
+        <p style="margin-top: 8px; font-size: 0.75rem;">ML + Rules + Threat Intelligence</p>
+    </div>
+
+</div>
+
+<script>
+function scanUrl() {
+    const url = document.getElementById('urlInput').value.trim();
+    if (!url) {
+        alert('Please enter a URL');
+        return;
+    }
+
+    document.getElementById('scanBtn').disabled = true;
+    document.getElementById('scanBtn').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><span>Scanning...</span>';
+    document.getElementById('loadingSpinner').classList.add('active');
+    document.getElementById('resultCard').classList.remove('active');
+
+    fetch('/scan_url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url })
+    })
+    .then(r => r.json())
+    .then(data => {
+        displayResults(data);
+    })
+    .catch(err => {
+        alert('Error: ' + err);
+    })
+    .finally(() => {
+        document.getElementById('scanBtn').disabled = false;
+        document.getElementById('scanBtn').innerHTML = '<i class="fas fa-radar"></i><span>Scan URL</span>';
+        document.getElementById('loadingSpinner').classList.remove('active');
+    });
+}
+
+function displayResults(data) {
+    if (data.error) {
+        alert('Error: ' + data.error);
+        return;
+    }
+
+    const resultCard = document.getElementById('resultCard');
+    resultCard.classList.add('active');
+
+       // Verdict
+    const verdictBadge = document.getElementById('verdictBadge');
+    const riskLevel = data.risk_level || 'UNKNOWN';
+
+    verdictBadge.className = 'verdict-badge';
+    if (riskLevel === 'HIGH' || riskLevel === 'Malicious') {
+        verdictBadge.classList.add('verdict-malicious');
+        verdictBadge.innerHTML = '<i class="fas fa-skull-crossbones"></i><span>' + (data.verdict || 'Malicious') + '</span>';
+    } else if (riskLevel === 'MEDIUM') {
+        verdictBadge.classList.add('verdict-suspicious');
+        verdictBadge.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>' + (data.verdict || 'Suspicious') + '</span>';
+    } else {
+        verdictBadge.classList.add('verdict-safe');
+        verdictBadge.innerHTML = '<i class="fas fa-check-circle"></i><span>' + (data.verdict || 'Safe') + '</span>';
+    }
+
+    // Score
+    const score = data.hybrid_score !== undefined ? data.hybrid_score : (data.score || 0);
+    let scoreColor = '#10b981';
+    if (score >= 70) scoreColor = '#ef4444';
+    else if (score >= 40) scoreColor = '#f59e0b';
+
+    const scoreDeg = (score / 100) * 360;
+    const scoreCircle = document.getElementById('scoreCircle');
+    scoreCircle.style.setProperty('--score-color', scoreColor);
+    scoreCircle.style.setProperty('--score-deg', scoreDeg + 'deg');
+
+    document.getElementById('scoreValue').textContent = Math.round(score) + '%';
+    document.getElementById('scoreValue').style.color = scoreColor;
+
+    // Hybrid bars
+    const comps = data.component_scores || {};
+    setTimeout(() => {
+        document.getElementById('mlBar').style.width = (comps.ml_score || 0) + '%';
+        document.getElementById('ruleBar').style.width = (comps.rule_score || 0) + '%';
+        document.getElementById('apiBar').style.width = (comps.api_score || 0) + '%';
+    }, 100);
+    document.getElementById('mlValue').textContent = Math.round(comps.ml_score || 0) + '%';
+    document.getElementById('ruleValue').textContent = Math.round(comps.rule_score || 0) + '%';
+    const apiScore = comps.api_score || 0;
+    const apiAvailable = data.method_comparison?.api_threat_intel?.available || false;
+    const apiValueEl = document.getElementById('apiValue');
+    const apiBar = document.getElementById('apiBar');
+    
+    if (!apiAvailable) {
+        apiValueEl.textContent = 'N/A';
+        apiValueEl.style.color = 'var(--text-muted)';
+        apiBar.style.width = '0%';
+    } else {
+        // API is available and checked — show score
+        apiValueEl.textContent = Math.round(apiScore) + '%';
+        apiBar.style.width = apiScore + '%';
+        
+        if (apiScore >= 70) {
+            apiValueEl.style.color = 'var(--accent-red)';
+            apiBar.style.background = 'var(--accent-red)';
+        } else if (apiScore >= 40) {
+            apiValueEl.style.color = 'var(--accent-yellow)';
+            apiBar.style.background = 'var(--accent-yellow)';
+        } else {
+            apiValueEl.style.color = 'var(--accent-cyan)';
+            apiBar.style.background = 'var(--accent-cyan)';
+        }
+    }
+
+    // Threats
+    const threatsList = document.getElementById('threatsList');
+    threatsList.innerHTML = '';
+    const threatsCard = document.getElementById('threatsCard');
+
+    if (data.reasons && data.reasons.length > 0 && data.reasons[0] !== 'No significant threats detected') {
+        threatsCard.style.display = 'block';
+        data.reasons.forEach(reason => {
+            const li = document.createElement('li');
+            li.className = 'factor-item';
+            li.innerHTML = `
+                <div class="factor-dot" style="background: var(--accent-red); color: var(--accent-red);"></div>
+                <div class="factor-content">
+                    <div class="factor-desc">${reason}</div>
+                </div>
+            `;
+            threatsList.appendChild(li);
+        });
+    } else {
+        threatsCard.style.display = 'none';
+    }
+
+    // Domain
+    const domainInfo = document.getElementById('domainInfo');
+    domainInfo.innerHTML = '';
+    const domainData = data.domain_info || {};
+    const fields = [
+        { label: 'Subdomain', value: domainData.subdomain || 'None' },
+        { label: 'Domain', value: domainData.domain || '-' },
+        { label: 'TLD', value: domainData.suffix || '-' },
+        { label: 'Registered', value: domainData.registered_domain || '-' }
+    ];
+    fields.forEach(f => {
+        const div = document.createElement('div');
+        div.className = 'domain-row';
+        div.innerHTML = `<span class="domain-label">${f.label}</span><span class="domain-value">${f.value}</span>`;
+        domainInfo.appendChild(div);
+    });
+
+    // Factors
+    const factorsList = document.getElementById('factorsList');
+    factorsList.innerHTML = '';
+    const factorsCard = document.getElementById('factorsCard');
+
+    if (data.all_factors && data.all_factors.length > 0) {
+        factorsCard.style.display = 'block';
+        data.all_factors.slice(0, 8).forEach(factor => {
+            const sev = (factor.severity || 'LOW').toLowerCase();
+            const colors = {
+                critical: '#ef4444',
+                high: '#f97316',
+                medium: '#f59e0b',
+                low: '#3b82f6'
+            };
+            const color = colors[sev] || '#64748b';
+
+            const li = document.createElement('li');
+            li.className = 'factor-item';
+            li.innerHTML = `
+                <div class="factor-dot" style="background: ${color}; color: ${color};"></div>
+                <div class="factor-content">
+                    <div class="factor-layer">${factor.layer || 'UNKNOWN'} • Weight: ${factor.weight || 0}</div>
+                    <div class="factor-desc">${factor.description || factor.factor || ''}</div>
+                </div>
+            `;
+            factorsList.appendChild(li);
+        });
+    } else {
+        factorsCard.style.display = 'none';
+    }
+
+    // Recommendations
+    const recList = document.getElementById('recommendationsList');
+    recList.innerHTML = '';
+    if (data.recommendations && data.recommendations.length > 0) {
+        data.recommendations.forEach(rec => {
+            const div = document.createElement('div');
+            div.className = 'rec-item';
+            div.innerHTML = `<i class="fas fa-chevron-right rec-icon"></i><span class="rec-text">${rec}</span>`;
+            recList.appendChild(div);
+        });
+    }
+
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+document.getElementById('urlInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') scanUrl();
+});
+</script>
+
+</body>
+</html>

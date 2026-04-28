@@ -1,0 +1,9 @@
+flask
+gunicorn
+python-dotenv
+bcrypt
+pandas
+numpy
+requests
+tldextract
+whois
