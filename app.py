@@ -1362,7 +1362,7 @@ def analyze_url_production(url):
             "hybrid_score": result.get('hybrid_score', result['risk_score']),
             "hybrid_severity": result.get('hybrid_severity', result['risk_level']),
             "component_scores": result.get('component_scores', {}),
-            "confidence": result['confidence'] / 100,
+            "confidence": result['confidence'] if result['confidence'] <= 1 else result['confidence'] / 100,
             "risk_level": result['risk_level'],
             "verdict": result['verdict'],
             "reasons": [t['description'] for t in result['primary_threats']] if result['primary_threats'] else ["No significant threats detected"],
