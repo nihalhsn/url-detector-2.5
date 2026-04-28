@@ -393,12 +393,13 @@
         .score-container {
             display: flex;
             justify-content: center;
+            gap: 50px;
             margin-bottom: 30px;
         }
 
         .score-circle {
-            width: 180px;
-            height: 180px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             position: relative;
             display: flex;
@@ -427,14 +428,14 @@
         }
 
         .score-value {
-            font-size: 3rem;
+            font-size: 2.2rem;
             font-weight: 800;
             line-height: 1;
             color: var(--score-color);
         }
 
         .score-label {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             margin-top: 4px;
             text-transform: uppercase;
@@ -714,6 +715,11 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--text-muted);
         }
+        #confidenceCircle {
+            --score-color: var(--accent-cyan);
+            --score-deg: 0deg;
+        }
+        
     </style>
 </head>
 <body>
@@ -783,7 +789,7 @@
                 </div>
             </div>
 
-            <!-- Score -->
+             <!-- Score -->
             <div class="score-container">
                 <div class="score-circle" id="scoreCircle">
                     <div class="score-circle-bg" id="scoreCircleBg">
@@ -793,6 +799,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="score-circle" id="confidenceCircle">
+        <div class="score-circle-bg" id="confidenceCircleBg">
+            <div class="score-circle-inner">
+                <div class="score-value" id="confidenceValue">0%</div>
+                <div class="score-label">Confidence</div>
+            </div>
+        </div>
+    </div>
             </div>
 
             <!-- Hybrid Scores -->
@@ -969,6 +983,22 @@ function displayResults(data) {
 
     document.getElementById('scoreValue').textContent = Math.round(score) + '%';
     document.getElementById('scoreValue').style.color = scoreColor;
+    
+    // Confidence display
+    const confidence = (data.confidence || 0);
+    const confPercent = Math.round(confidence * 100);
+    const confDeg = (confPercent / 100) * 360;
+    let confColor = '#06b6d4'; // cyan
+    if (confPercent >= 90) confColor = '#10b981'; // green
+    else if (confPercent >= 70) confColor = '#3b82f6'; // blue
+    else if (confPercent >= 50) confColor = '#f59e0b'; // yellow
+
+    const confCircle = document.getElementById('confidenceCircle');
+    confCircle.style.setProperty('--score-color', confColor);
+    confCircle.style.setProperty('--score-deg', confDeg + 'deg');
+    document.getElementById('confidenceValue').textContent = confPercent + '%';
+    document.getElementById('confidenceValue').style.color = confColor;
+
 
     // Hybrid bars
     const comps = data.component_scores || {};
